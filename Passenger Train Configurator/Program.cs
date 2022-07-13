@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Passenger_Train_Configurator
 {
@@ -6,37 +7,72 @@ namespace Passenger_Train_Configurator
     {
         static void Main(string[] args)
         {
-            Console.CursorVisible = false;
+            Dispatcher dispatcher = new Dispatcher();
             Trains trains = new Trains();
+            Van van = new Van();
+
+            Console.CursorVisible = false;
             bool isTrains = true;
             byte repetitions = 15;
 
             while (isTrains)
             {
-                Console.SetCursorPosition(0, repetitions);
-                trains.Direction();
-                trains.TrainClass();
-                trains.PassengersNum();
-                trains.Wagons();
-
                 Console.SetCursorPosition(0, 0);
-                trains.SendTrain();
+                dispatcher.SendTrain(trains, van);
+
+                Console.SetCursorPosition(0, repetitions);
+                dispatcher.Direction();
+                van.TrainClass();
+                dispatcher.PassengersNum();
+                trains.Wagons(dispatcher, van);
+
+                Console.Clear();
             }
         }
     }
 
-    class Trains
+    class Van
     {
-        Random random = new Random();
-
-        private int _capacity;
         private int _economyClass = 60;
         private int _secondClass = 40;
         private int _firstClass = 30;
+        public int Capacity { get; private set; }
+
+        public void TrainClass()
+        {
+            Console.Write("Выберите класс поезда. 1)Эконом - 60 мест в вагоне. 2)Купе - 40 мест в вагоне. 3)Люкс - 30 мест в вагоне\t");
+
+            switch (int.Parse(Console.ReadLine()))
+            {
+                case 1:
+                    Capacity = _economyClass;
+                    break;
+                case 2:
+                    Capacity = _secondClass;
+                    break;
+                case 3:
+                    Capacity = _firstClass;
+                    break;
+                default:
+                    Console.WriteLine("ввод неверный");
+                    break;
+            }
+        }
+
+        public void RestartVan()
+        {
+            Capacity = 0;
+        }
+    }
+
+    class Dispatcher
+    {
+
+        Random random = new Random();
         private string _start;
         private string _finish;
-        private int _passengers;
-        private byte _wagons = 0;
+
+        public int Passengers { get; private set; }
 
         public void Direction()
         {
@@ -49,66 +85,58 @@ namespace Passenger_Train_Configurator
             Console.WriteLine($"Маршрут {_start} - {_finish} построен");
         }
 
-        public void TrainClass()
-        {
-            Console.Write("Выберите класс поезда. 1)Эконом - 60 мест в вагоне. 2)Купе - 40 мест в вагоне. 3)Люкс - 30 мест в вагоне\t");
-
-            switch (int.Parse(Console.ReadLine()))
-            {
-                case 1:
-                    _capacity = _economyClass;
-                    break;
-                case 2:
-                    _capacity = _secondClass;
-                    break;
-                case 3:
-                    _capacity = _firstClass;
-                    break;
-                default:
-                    Console.WriteLine("ввод неверный");
-                    break;
-            }
-        }
-
         public void PassengersNum()
         {
             int minPerss = 400;
             int maxPerss = 900;
-            _passengers = random.Next(minPerss, maxPerss);
+            Passengers = random.Next(minPerss, maxPerss);
         }
 
-        public byte Wagons()
+        public void SendTrain(Trains trains, Van van)
+        {
+            if (Passengers > 0)
+            {
+                Console.WriteLine($"По маршруту {_start} - {_finish} едет поезд на {trains.Wagon} вагонов\n");
+                Console.WriteLine($"Продано билетов {Passengers}, вместительность вагонов {van.Capacity}\n");
+                Console.WriteLine("Нажмите любую кнопку для построения нового маршрута...\n");
+                Restart(trains, van);
+            }
+
+            else Console.WriteLine("Маршутов нет");
+        }
+
+        private void Restart(Trains trains, Van van)
+        {
+            trains.WagonsRestart();
+            Passengers = 0;
+            van.RestartVan();
+        }
+    }
+
+    class Trains
+    {
+        public byte Wagon { get; private set; }
+
+        public byte Wagons(Dispatcher dispatcher, Van van)
         {
             bool isWagons = true;
-            int numberPassengers = _passengers;
+            int numberPassengers = dispatcher.Passengers;
 
             while (isWagons)
             {
                 if (numberPassengers >= 0)
                 {
-                    numberPassengers -= _capacity;
-                    _wagons += 1;
+                    numberPassengers -= van.Capacity;
+                    Wagon += 1;
                 }
                 else isWagons = false;
             }
-            return _wagons;
+            return Wagon;
         }
 
-        public void SendTrain()
+        public void WagonsRestart()
         {
-            Console.WriteLine($"По маршруту {_start} - {_finish} едет поезд на {_wagons} вагонов\n");
-            Console.WriteLine($"Продано билетов {_passengers}, вместительность вагонов {_capacity}\n");
-            Console.WriteLine("Нажмите любую кнопку для построения нового маршрута...\n");
-            Console.ReadLine();
-            Console.Clear();
-            Restart();
-        }
-
-        private void Restart()
-        {
-            _wagons = 0;
-            _passengers = 0;
-            _capacity = 0;
+            Wagon = 0;
         }
     }
 }
