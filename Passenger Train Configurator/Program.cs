@@ -1,32 +1,31 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Passenger_Train_Configurator
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main ( string [] args )
         {
-            Dispatcher dispatcher = new Dispatcher();
-            Trains trains = new Trains();
-            Van van = new Van();
+            Dispatcher dispatcher = new Dispatcher ();
+            Trains trains = new Trains ();
+            Van van = new Van ();
 
             Console.CursorVisible = false;
-            bool isTrains = true;
             byte repetitions = 15;
 
-            while (isTrains)
+            while ( true )
             {
-                Console.SetCursorPosition(0, 0);
-                dispatcher.SendTrain(trains, van);
+                Console.SetCursorPosition ( 0, 0 );
+                dispatcher.SendTrain ( trains, van );
 
-                Console.SetCursorPosition(0, repetitions);
-                dispatcher.Direction();
-                van.TrainClass();
-                dispatcher.PassengersNum();
-                trains.Wagons(dispatcher, van);
+                Console.SetCursorPosition ( 0, repetitions );
+                dispatcher.Direction ();
+                van.TrainClass ();
+                dispatcher.PassengersNum ();
+                trains.Wagons ( dispatcher, van );
 
-                Console.Clear();
+                Console.Clear ();
             }
         }
     }
@@ -38,11 +37,11 @@ namespace Passenger_Train_Configurator
         private int _firstClass = 30;
         public int Capacity { get; private set; }
 
-        public void TrainClass()
+        public void TrainClass ()
         {
-            Console.Write("Выберите класс поезда. 1)Эконом - 60 мест в вагоне. 2)Купе - 40 мест в вагоне. 3)Люкс - 30 мест в вагоне\t");
+            Console.Write ( "Выберите класс поезда. 1)Эконом - 60 мест в вагоне. 2)Купе - 40 мест в вагоне. 3)Люкс - 30 мест в вагоне\t" );
 
-            switch (int.Parse(Console.ReadLine()))
+            switch ( int.Parse ( Console.ReadLine () ) )
             {
                 case 1:
                     Capacity = _economyClass;
@@ -54,12 +53,12 @@ namespace Passenger_Train_Configurator
                     Capacity = _firstClass;
                     break;
                 default:
-                    Console.WriteLine("ввод неверный");
+                    Console.WriteLine ( "ввод неверный" );
                     break;
             }
         }
 
-        public void RestartVan()
+        public void RestartVan ()
         {
             Capacity = 0;
         }
@@ -68,75 +67,88 @@ namespace Passenger_Train_Configurator
     class Dispatcher
     {
 
-        Random random = new Random();
+        Random random = new Random ();
         private string _start;
         private string _finish;
 
         public int Passengers { get; private set; }
 
-        public void Direction()
+        public void Direction ()
         {
-            Console.Write("Введите пункт отправления ");
-            _start = Convert.ToString(Console.ReadLine());
+            Console.Write ( "Введите пункт отправления " );
+            _start = Convert.ToString ( Console.ReadLine () );
 
-            Console.Write("Введите пункт прибытия ");
-            _finish = Convert.ToString(Console.ReadLine());
+            Console.Write ( "Введите пункт прибытия " );
+            _finish = Convert.ToString ( Console.ReadLine () );
 
-            Console.WriteLine($"Маршрут {_start} - {_finish} построен");
+            Console.WriteLine ( $"Маршрут {_start} - {_finish} построен" );
         }
 
-        public void PassengersNum()
+        public void PassengersNum ()
         {
             int minPerss = 400;
             int maxPerss = 900;
-            Passengers = random.Next(minPerss, maxPerss);
+            Passengers = random.Next ( minPerss, maxPerss );
         }
 
-        public void SendTrain(Trains trains, Van van)
+        public void SendTrain ( Trains trains, Van van )
         {
-            if (Passengers > 0)
+            if ( Passengers > 0 )
             {
-                Console.WriteLine($"По маршруту {_start} - {_finish} едет поезд на {trains.Wagon} вагонов\n");
-                Console.WriteLine($"Продано билетов {Passengers}, вместительность вагонов {van.Capacity}\n");
-                Console.WriteLine("Нажмите любую кнопку для построения нового маршрута...\n");
-                Restart(trains, van);
+                Console.WriteLine ( $"По маршруту {_start} - {_finish} едет поезд на {trains.Wagon} вагонов и {trains.LastVan} по 30 мест\n" );
+                Console.WriteLine ( $"Продано билетов {Passengers}, вместительность вагонов {van.Capacity}, свободно {trains.FreeSeats} мест\n" );
+                Console.WriteLine ( "Нажмите любую кнопку для построения нового маршрута...\n" );
+                Restart ( trains, van );
             }
 
-            else Console.WriteLine("Маршутов нет");
+            else Console.WriteLine ( "Маршутов нет" );
         }
 
-        private void Restart(Trains trains, Van van)
+        private void Restart ( Trains trains, Van van )
         {
-            trains.WagonsRestart();
+            trains.WagonsRestart ();
             Passengers = 0;
-            van.RestartVan();
+            van.RestartVan ();
         }
     }
 
     class Trains
     {
+        public int FreeSeats { get; private set; }
+        public int LastVan { get; private set; }
         public byte Wagon { get; private set; }
+        private int _numberPassengers;
+        private int _remainingSeats = 30;
 
-        public byte Wagons(Dispatcher dispatcher, Van van)
+        public byte Wagons ( Dispatcher dispatcher, Van van )
         {
             bool isWagons = true;
-            int numberPassengers = dispatcher.Passengers;
+            _numberPassengers = dispatcher.Passengers;
 
-            while (isWagons)
+            while ( isWagons )
             {
-                if (numberPassengers >= 0)
+                if ( _numberPassengers >= 0 )
                 {
-                    numberPassengers -= van.Capacity;
+                    _numberPassengers -= van.Capacity;
                     Wagon += 1;
+
+                 if ( _numberPassengers <= _remainingSeats && _numberPassengers < 0)
+                    {
+                        Wagon -= 1;
+                        LastVan += 1;
+                        FreeSeats -= dispatcher.Passengers - (van.Capacity * Wagon + _remainingSeats);
+                    }
                 }
+
                 else isWagons = false;
             }
             return Wagon;
         }
 
-        public void WagonsRestart()
+        public void WagonsRestart ()
         {
             Wagon = 0;
+            LastVan = 0;
         }
     }
 }
